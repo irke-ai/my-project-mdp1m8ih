@@ -1,0 +1,102 @@
+name: AI Automated Development
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Development command'
+        required: true
+        type: string
+  repository_dispatch:
+    types: [ai-development]
+
+jobs:
+  develop:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Git
+        run: |
+          git config --global user.email "ai@ploppy.dev"
+          git config --global user.name "Ploppy AI Developer"
+      
+      - name: Check Environment
+        run: |
+          echo "Command: ${{ github.event.inputs.command || github.event.client_payload.command }}"
+          echo "Current directory: $(pwd)"
+          echo "Files in directory:"
+          ls -la
+      
+      - name: Create Development File
+        env:
+          COMMAND: ${{ github.event.inputs.command || github.event.client_payload.command }}
+        run: |
+          # Create a simple implementation file based on command
+          mkdir -p .ploppy
+          echo "$(date): $COMMAND" >> .ploppy/development.log
+          
+          # Create a simple implementation file
+          cat > implementation.js << 'EOF'
+          // AI Development Implementation
+          // Command: ${{ github.event.inputs.command || github.event.client_payload.command }}
+          // Generated at: $(date)
+          
+          console.log("Implementation for: ${{ github.event.inputs.command || github.event.client_payload.command }}");
+          
+          // TODO: Implement the requested feature
+          // This is a placeholder implementation
+          
+          module.exports = {
+            execute: function() {
+              console.log("Executing AI-generated code...");
+              // Implementation goes here
+            }
+          };
+          EOF
+          
+          echo "Created implementation.js"
+          
+      - name: Test DeepInfra API (Optional)
+        env:
+          DEEPINFRA_API_KEY: ${{ secrets.DEEPINFRA_API_KEY }}
+          COMMAND: ${{ github.event.inputs.command || github.event.client_payload.command }}
+        run: |
+          if [ -n "$DEEPINFRA_API_KEY" ]; then
+            echo "Testing DeepInfra API connection..."
+            
+            # Simple curl test
+            curl -X POST https://api.deepinfra.com/v1/openai/chat/completions \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $DEEPINFRA_API_KEY" \
+              -d '{
+                "model": "deepinfra/qwen/Qwen2.5-Coder-32B-Instruct",
+                "messages": [{"role": "user", "content": "Say hello"}],
+                "max_tokens": 10
+              }' \
+              -o api-test.json || echo "API test failed"
+            
+            if [ -f api-test.json ]; then
+              echo "API Response:"
+              cat api-test.json
+            fi
+          else
+            echo "No DeepInfra API key found, skipping API test"
+          fi
+          
+      - name: Commit Changes
+        run: |
+          git add .
+          git commit -m "AI Development: ${{ github.event.inputs.command || github.event.client_payload.command }}" || echo "No changes to commit"
+          git push || echo "Push failed"
+          
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Development Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Command: ${{ github.event.inputs.command || github.event.client_payload.command }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Time: $(date)" >> $GITHUB_STEP_SUMMARY
