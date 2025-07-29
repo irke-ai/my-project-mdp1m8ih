@@ -1,0 +1,46 @@
+{
+  "name": "AI Project Development",
+  "image": "mcr.microsoft.com/vscode/devcontainers/typescript-node:18",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.vscode-typescript-next",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "prisma.prisma"
+      ]
+    }
+  },
+  "postCreateCommand": "chmod +x scripts/setup-project.sh && ./scripts/setup-project.sh",
+  "postStartCommand": "chmod +x .aider/auto-develop.sh && nohup bash .aider/auto-develop.sh > .aider/auto-develop.log 2>&1 &",
+  "secrets": {
+    "DEEPINFRA_API_KEY": {
+      "description": "DeepInfra API key for Qwen 2.5 Coder 32B",
+      "documentationUrl": "https://deepinfra.com/dash/api_keys"
+    },
+    "OPENAI_API_KEY": {
+      "description": "Will use DEEPINFRA_API_KEY value for compatibility",
+      "documentationUrl": "https://deepinfra.com/dash/api_keys"
+    }
+  },
+  "forwardPorts": [
+    3000,
+    8080
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "Application",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Aider API",
+      "onAutoForward": "silent"
+    }
+  }
+}
